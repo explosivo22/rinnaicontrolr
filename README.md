@@ -1,4 +1,4 @@
-# rinnaicontrol-r - Python interface for the Rinnai Control-R API
+# rinnaicontrolr - Python interface for the Rinnai Control-R API
 
 [![PyPi](https://img.shields.io/pypi/v/pyflowater.svg)](https://pypi.python.org/pypi/rinnaicontrol-r)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
