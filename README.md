@@ -17,7 +17,7 @@ NOTE:
 ## Installation
 
 ```
-pip3 install rinnaicontrolr
+pip install rinnaicontrolr
 ```
 
 ## Examples
