@@ -26,7 +26,7 @@ respondToAuthChallengeHeaders = {
 	"x-amz-target" : "AWSCognitoIdentityProviderService.RespondToAuthChallenge",
 }
 
-baseAuthUrl = "cognito-idp.us-east-e.amazonaws.com"
+baseAuthUrl = "https://cognito-idp.us-east-1.amazonaws.com"
 
 n_hex = 'FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1' + '29024E088A67CC74020BBEA63B139B22514A08798E3404DD' + \
         'EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245' + 'E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED' + \
@@ -123,7 +123,7 @@ class RinnaiWaterHeater(object):
 
         payload = ("{\"AuthFlow\":\"USER_SRP_AUTH\",\"ClientId\":\"%s\",\"AuthParameters\":"
         "{\"USERNAME\":\"%s\",\"SRP_A\":\"%s\"},\"ClientMetadata\":{}}" 
-        % (client_id,username,format(large_a_value,'x')))
+        % (self.client_id,self.username,format(self.large_a_value,'x')))
 
         r = requests.post(
             baseAuthUrl,
@@ -132,9 +132,9 @@ class RinnaiWaterHeater(object):
         )
 
         if r.status_code == 200:
-            loggin.info("Successfully sent initAuth")
+            logging.info("Successfully sent initAuth")
             result = r.json()
-            payload = process_challenge(result['ChallengeParameters'])
+            payload = self.process_challenge(result['ChallengeParameters'])
 
             r = requests.post(
                 baseAuthUrl,
@@ -192,8 +192,8 @@ class RinnaiWaterHeater(object):
         self.__acquireToken()
 
         payload = ("{\r\n    \"query\": \"query GetUserByEmail($email: String, $sortDirection: ModelSortDirection, $filter: ModelRinnaiUserFilterInput, $limit: Int, $nextToken: String) "
-                   "{\\n  getUserByEmail(email: $email, sortDirection: $sortDirection, filter: $filter, limit: $limit, nextToken: $nextToken) {\\n    items {\\n      id\\n      name\\n      email\\n      "
-                   "country\\n      username\\n      firstname\\n      lastname\\n      devices {\\n        items {\\n          id\\n          thing_name\\n          device_name\\n          dealer_uuid\\n          "
+                   "{\\n  getUserByEmail(email: $email, sortDirection: $sortDirection, filter: $filter, limit: $limit, nextToken: $nextToken) {\\n    items {devices {\\n        "
+                   "items {\\n          id\\n          thing_name\\n          device_name\\n          dealer_uuid\\n          "
                    "city\\n          state\\n          street\\n          zip\\n          country\\n          firmware\\n          model\\n          dsn\\n          user_uuid\\n          connected_at\\n          "
                    "key\\n          lat\\n          lng\\n          address\\n          vacation\\n          createdAt\\n          updatedAt\\n          activity {\\n            clientId\\n            "
                    "serial_id\\n            timestamp\\n            eventType\\n          }\\n          shadow {\\n            heater_serial_number\\n            ayla_dsn\\n            "
@@ -241,7 +241,9 @@ class RinnaiWaterHeater(object):
 
         if r.status_code == 200:
             result = r.json()
-            return result['data']['getUserByEmail']['items']['devices']['items']
+            for items in result["data"]['getUserByEmail']['items']:
+                for k,v in items['devices'].items():
+                    return v
         else:
             r.raise_for_status()
 
@@ -281,7 +283,7 @@ class RinnaiWaterHeater(object):
         timestamp = re.sub(r" 0(\d) ", r" \1 ",
                                datetime.datetime.utcnow().strftime("%a %b %d %H:%M:%S UTC %Y"))
 
-        hkdf = get_password_authentication_key(user_id_for_srp, self.password, hex_to_long(srp_b_hex), salt_hex)
+        hkdf = self.get_password_authentication_key(user_id_for_srp, self.password, hex_to_long(srp_b_hex), salt_hex)
         secret_block_bytes = base64.standard_b64decode(secret_block_b64)
         msg = bytearray(self.pool_id.split('_')[1], 'utf-8') + bytearray(user_id_for_srp, 'utf-8') + \
                   bytearray(secret_block_bytes) + bytearray(timestamp, 'utf-8')
