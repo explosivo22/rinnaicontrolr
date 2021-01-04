@@ -140,7 +140,7 @@ class RinnaiWaterHeater(object):
                    "\"REFRESH_TOKEN\":\"%s\"}}" % (self.client_id, accessToken['refresh_token']))
 
         r = requests.post(
-            baseAuthUrl,
+            BASE_AUTH_URL,
             data=payload,
             headers=initAuthHeaders,
         )
