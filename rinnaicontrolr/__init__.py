@@ -242,7 +242,7 @@ class RinnaiWaterHeater(object):
                 "\"PASSWORD_CLAIM_SIGNATURE\":\"%s\"},\"ClientMetadata\":{}}" 
                 % (self.client_id,user_id_for_srp,secret_block_b64,timestamp,signature_string.decode('utf-8')))
 
-    def start_recirculation(self, thing_name, user_uuid, duration):
+    def start_recirculation(self, thing_name: str, user_uuid: str, duration: int, additional_params={}):
         """start recirculation on the specified device"""
         url = "https://d1coipyopavzuf.cloudfront.net/api/device_shadow/input"
 
