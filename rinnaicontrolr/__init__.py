@@ -250,7 +250,7 @@ class RinnaiWaterHeater(object):
           'User-Agent': 'okhttp/3.12.1',
           'Content-Type': 'application/x-www-form-urlencoded'
         }
-        payload = f"user={user_uuid}&thing={thing_name}&attribute=set_priority_status&value=true"
+        payload = "user=%s&thing=%s&attribute=set_priority_status&value=true" % (user_uuid, thing_name)
 
         r = requests.post(
             url,
@@ -258,16 +258,18 @@ class RinnaiWaterHeater(object):
             headers=headers
         )
         if r.status_code == 200:
-            payload = f"user={user_uuid}&thing={thing_name}&attribute=recirculation_duration&value={duration}"
+            payload = "user=%s&thing=%s&attribute=recirculation_duration&value=%s" % (user_uuid, thing_name, duration)
             r = requests.post(
                 url,
                 data=payload,
                 headers=headers
             )
             if r.status_code == 200:
-                payload = f"user={user_uuid}&thing={thing_name}&attribute=set_recirculation_enabled&value=true"
+                payload = "user=%s&thing=%s&attribute=set_recirculation_enabled&value=true" % (user_uuid, thing_name)
                 r = requests.post(
                     url,
                     data=payload,
                     headers=headers
                 )
+
+                return r
