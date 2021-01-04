@@ -242,17 +242,32 @@ class RinnaiWaterHeater(object):
                 "\"PASSWORD_CLAIM_SIGNATURE\":\"%s\"},\"ClientMetadata\":{}}" 
                 % (self.client_id,user_id_for_srp,secret_block_b64,timestamp,signature_string.decode('utf-8')))
 
-    def set_temp(self, device_id: str, user_uuid: str, temp: int):
+    def start_recirculation(self, thing_name, user_uuid, duration):
+        """start recirculation on the specified device"""
         url = "https://d1coipyopavzuf.cloudfront.net/api/device_shadow/input"
-        
-        # check if the temp is a multiple of 5. Rinnai only takes temps this way
-        if temp % 5 == 0:
-            payload="user=%s&thing=%s&attribute=set_domestic_temperature&value=%s" % (user_uuid, device_id, temp)
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
+
+        headers = {
+          'User-Agent': 'okhttp/3.12.1',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        payload = f"user={user_uuid}&thing={thing_name}&attribute=set_priority_status&value=true"
+
+        r = requests.post(
+            url,
+            data=payload,
+            headers=headers
+        )
+        if r.status_code == 200:
+            payload = f"user={user_uuid}&thing={thing_name}&attribute=recirculation_duration&value={duration}"
             r = requests.post(
                 url,
                 data=payload,
-                headers=headers,
+                headers=headers
             )
+            if r.status_code == 200:
+                payload = f"user={user_uuid}&thing={thing_name}&attribute=set_recirculation_enabled&value=true"
+                r = requests.post(
+                    url,
+                    data=payload,
+                    headers=headers
+                )
