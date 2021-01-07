@@ -142,7 +142,7 @@ class RinnaiWaterHeater(object):
         r = requests.post(
             BASE_AUTH_URL,
             data=payload,
-            headers=initAuthHeaders,
+            headers=INIT_AUTH_HEADERS,
         )
 
         if r.status_code == 200:
