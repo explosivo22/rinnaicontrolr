@@ -3,6 +3,11 @@ test for rinnaicontrolr.base
 
 "Because any test is better than no test."
 
+Create a file in this directory called
+   test_credentials.json
+that contains a dictionary with a "user" key
+and a "password" key.
+
 TODO: test more things
 TODO: create unittests that have no dependency on external servers
 """
