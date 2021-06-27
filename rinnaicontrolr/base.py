@@ -1,13 +1,5 @@
-import secrets
-import hashlib
-import hmac
-import base64
-import datetime
-import json
-import logging
-import re
-import six
-import time
+import secrets, hashlib, hmac, base64
+import datetime, json, logging, re, six, time
 
 import requests
 
@@ -112,28 +104,26 @@ class RinnaiWaterHeater(object):
             data=payload,
             headers=INIT_AUTH_HEADERS,
         )
+        r.raise_for_status()
 
-        if r.status_code == 200:
-            logging.info("Successfully sent initAuth")
-            result = r.json()
-            payload = self.process_challenge(result['ChallengeParameters'])
+        logging.info("Successfully sent initAuth")
+        result = r.json()
+        payload = self.process_challenge(result['ChallengeParameters'])
 
-            r = requests.post(
-                BASE_AUTH_URL,
-                data=payload,
-                headers=RESPOND_TO_AUTH_CHALLENGE_HEADERS,
-            )
+        r = requests.post(
+            BASE_AUTH_URL,
+            data=payload,
+            headers=RESPOND_TO_AUTH_CHALLENGE_HEADERS,
+        )
+        r.raise_for_status()
 
-            if r.status_code == 200:
-                result = r.json()
-                self.access_token = result['AuthenticationResult']['AccessToken']
-                self.expires_in = result['AuthenticationResult']['ExpiresIn']
-                self.id_token = result['AuthenticationResult']['IdToken']
-                self.refresh_token = result['AuthenticationResult']['RefreshToken']
-                self.expiry_date = time.time() + result['AuthenticationResult']['ExpiresIn']
-                return True
-        else:
-            r.raise_for_status()
+        result = r.json()
+        self.access_token = result['AuthenticationResult']['AccessToken']
+        self.expires_in = result['AuthenticationResult']['ExpiresIn']
+        self.id_token = result['AuthenticationResult']['IdToken']
+        self.refresh_token = result['AuthenticationResult']['RefreshToken']
+        self.expiry_date = time.time() + result['AuthenticationResult']['ExpiresIn']
+        return True
 
     def refreshToken(self, accessToken):
         payload = ("{\"ClientId\":\"%s\",\"AuthFlow\":\"REFRESH_TOKEN_AUTH\",\"AuthParameters\":"
@@ -144,14 +134,14 @@ class RinnaiWaterHeater(object):
             data=payload,
             headers=INIT_AUTH_HEADERS,
         )
+        r.raise_for_status()
 
-        if r.status_code == 200:
-            result = r.json()
-            self.access_token = result['AuthenticationResult']['AccessToken']
-            self.expires_in = result['AuthenticationResult']['ExpiresIn']
-            self.id_token = result['AuthenticationResult']['IdToken']
-            self.refresh_token = result['AuthenticationResult']['RefreshToken']
-            self.expiry_date = time.time() + result['AuthenticationResult']['ExpiresIn'] 
+        result = r.json()
+        self.access_token = result['AuthenticationResult']['AccessToken']
+        self.expires_in = result['AuthenticationResult']['ExpiresIn']
+        self.id_token = result['AuthenticationResult']['IdToken']
+        self.refresh_token = result['AuthenticationResult']['RefreshToken']
+        self.expiry_date = time.time() + result['AuthenticationResult']['ExpiresIn']
 
     def __acquireToken(self):
         # Fetch and refresh tokens as needed
@@ -169,7 +159,7 @@ class RinnaiWaterHeater(object):
         else:
             logging.info('Token is valid, continuing')
             pass
-        
+
     def getDevices(self):
         self.__acquireToken()
 
@@ -185,14 +175,12 @@ class RinnaiWaterHeater(object):
             data=payload,
             headers=headers,
         )
+        r.raise_for_status()
 
-        if r.status_code == 200:
-            result = r.json()
-            for items in result["data"]['getUserByEmail']['items']:
-                for k,v in items['devices'].items():
-                    return v
-        else:
-            r.raise_for_status()
+        result = r.json()
+        for items in result["data"]['getUserByEmail']['items']:
+            for k,v in items['devices'].items():
+                return v
 
     @property
     def is_connected(self):
@@ -257,19 +245,22 @@ class RinnaiWaterHeater(object):
             data=payload,
             headers=headers
         )
-        if r.status_code == 200:
-            payload = "user=%s&thing=%s&attribute=recirculation_duration&value=%s" % (user_uuid, thing_name, duration)
-            r = requests.post(
-                url,
-                data=payload,
-                headers=headers
-            )
-            if r.status_code == 200:
-                payload = "user=%s&thing=%s&attribute=set_recirculation_enabled&value=true" % (user_uuid, thing_name)
-                r = requests.post(
-                    url,
-                    data=payload,
-                    headers=headers
-                )
+        r.raise_for_status()
 
-                return r
+        payload = "user=%s&thing=%s&attribute=recirculation_duration&value=%s" % (user_uuid, thing_name, duration)
+        r = requests.post(
+            url,
+            data=payload,
+            headers=headers
+        )
+        r.raise_for_status()
+
+        payload = "user=%s&thing=%s&attribute=set_recirculation_enabled&value=true" % (user_uuid, thing_name)
+        r = requests.post(
+            url,
+            data=payload,
+            headers=headers
+        )
+        r.raise_for_status()
+
+        return r
