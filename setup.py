@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="rinnaicontrolr",
-    version="0.2.0",
+    version="0.2.1.a0",
     description="Python interface for Rinnai Control-R API",
     url="https://github.com/explosivo22/rinnaicontrolr",
     author="Brad Barbour",
