@@ -3,7 +3,6 @@ import json, logging, re, six
 from datetime import datetime, timedelta, time
 from typing import Optional
 
-import requests
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 
