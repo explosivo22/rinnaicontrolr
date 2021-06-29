@@ -8,6 +8,8 @@ from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import ClientError
 
 from .errors import RequestError
+from .device import Device
+from .user import User
 
 from rinnaicontrolr.const import (
     INIT_AUTH_HEADERS,
@@ -18,7 +20,7 @@ from rinnaicontrolr.const import (
     INFO_BITS,
     POOL_ID,
     CLIENT_ID,
-    GET_DEVICES_PAYLOAD
+    GET_USER_PAYLOAD
 )
 
 def hash_sha256(buf):
@@ -75,7 +77,7 @@ def calculate_u(big_a, big_b):
     u_hex_hash = hex_hash(pad_hex(big_a) + pad_hex(big_b))
     return hex_to_long(u_hex_hash)
 
-class RinnaiWaterHeater(object):
+class API(object):
     # Represents a Rinnai Water Heater, with methods for status and issuing commands
 
     def __init__(self, username: str, password: str, *, session: Optional[ClientSession] = None
@@ -95,6 +97,11 @@ class RinnaiWaterHeater(object):
         self._id_token: Optional[str] = None
         self._refresh_token: Optional[str] = None
         self._expiry_date: Optional[datetime] = None
+
+        self.device: Device = Device(self._request)
+
+         # These endpoints will get instantiated post-authentication:
+        self.user: Optional[User] = None
 
     async def _request(self, method: str, url: str, **kwargs) -> dict:
         """Make a request against the API."""
@@ -162,6 +169,9 @@ class RinnaiWaterHeater(object):
         self._refresh_token = respond_auth_response['AuthenticationResult']['RefreshToken']
         self._expiry_date = datetime.now() + timedelta(seconds=respond_auth_response['AuthenticationResult']['ExpiresIn'])
 
+        if not self.user:
+            self.user = User(self._request, self._username)
+
     async def refreshToken(self):
         payload = ("{\"ClientId\":\"%s\",\"AuthFlow\":\"REFRESH_TOKEN_AUTH\",\"AuthParameters\":"
                     "\"REFRESH_TOKEN\":\"%s\"}}" % (self._client_id, self._refresh_token))
@@ -178,26 +188,6 @@ class RinnaiWaterHeater(object):
         self._id_token = refresh_response['AuthenticationResult']['IdToken']
         self._refresh_token = refresh_response['AuthenticationResult']['RefreshToken']
         self._expiry_date = datetime.now() + timedelta(seconds=refresh_response['AuthenticationResult']['ExpiresIn'])
-
-    async def getDevices(self):
-
-        payload = GET_DEVICES_PAYLOAD % (self._username)
-        device_headers = {
-            'x-amz-user-agent': 'aws-amplify/3.4.3 react-native',
-            'x-api-key': 'da2-dm2g4rqvjbaoxcpo4eccs3k5he',
-            'Content-Type': 'application/json'
-        }
-
-        data: dict = await self._request(
-            "post",
-            "https://s34ox7kri5dsvdr43bfgp6qh6i.appsync-api.us-east-1.amazonaws.com/graphql",
-            data=payload,
-            headers=device_headers
-        )
-
-        for items in data["data"]['getUserByEmail']['items']:
-            for k,v in items['devices'].items():
-                return v
 
     @property
     def is_connected(self):
@@ -247,44 +237,9 @@ class RinnaiWaterHeater(object):
                 "\"PASSWORD_CLAIM_SIGNATURE\":\"%s\"},\"ClientMetadata\":{}}" 
                 % (self._client_id,user_id_for_srp,secret_block_b64,timestamp,signature_string.decode('utf-8')))
 
-    def start_recirculation(self, thing_name: str, user_uuid: str, duration: int, additional_params={}):
-        """start recirculation on the specified device"""
-        url = "https://d1coipyopavzuf.cloudfront.net/api/device_shadow/input"
-
-        headers = {
-          'User-Agent': 'okhttp/3.12.1',
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-        payload = "user=%s&thing=%s&attribute=set_priority_status&value=true" % (user_uuid, thing_name)
-
-        r = requests.post(
-            url,
-            data=payload,
-            headers=headers
-        )
-        r.raise_for_status()
-
-        payload = "user=%s&thing=%s&attribute=recirculation_duration&value=%s" % (user_uuid, thing_name, duration)
-        r = requests.post(
-            url,
-            data=payload,
-            headers=headers
-        )
-        r.raise_for_status()
-
-        payload = "user=%s&thing=%s&attribute=set_recirculation_enabled&value=true" % (user_uuid, thing_name)
-        r = requests.post(
-            url,
-            data=payload,
-            headers=headers
-        )
-        r.raise_for_status()
-
-        return r
-
-async def async_get_wh(
+async def async_get_api(
     username: str, password: str, *, session: Optional[ClientSession] = None
-) -> RinnaiWaterHeater:
-    wh = RinnaiWaterHeater(username,password)
+) -> API:
+    wh = API(username,password)
     await wh.async_authenticate()
     return wh

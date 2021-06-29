@@ -14,6 +14,6 @@ queries every 10 minutes or so, but not much more often.
    
 """
 
-from rinnaicontrolr.base import async_get_wh
+from rinnaicontrolr.api import async_get_api
 
 # we told you it was a simple API...
