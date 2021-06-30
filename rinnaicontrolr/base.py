@@ -3,6 +3,8 @@ import datetime, json, logging, re, six, time
 
 import requests
 
+LOGGER = logging.getLogger('rinnaicontrolr')
+
 from rinnaicontrolr.const import (
     INIT_AUTH_HEADERS,
     RESPOND_TO_AUTH_CHALLENGE_HEADERS,
@@ -82,18 +84,21 @@ class RinnaiWaterHeater(object):
         self.k = hex_to_long(hex_hash('00' + N_HEX + '0' + G_HEX))
         self.small_a_value = self.generate_random_small_a()
         self.large_a_value = self.calculate_a()
-        self.access_token = None
-        self.expires_in = None
-        self.id_token = None
-        self.refresh_token = None
-        self.expiry_date = None
+        self.token = {}
 
-        self.__acquireToken()
+    def validate_token(self):
+        """Fetch or refresh the access token as needed"""
 
-    def auth(self):
-        """
-        Authenticate and store the tokens
-        """
+        now = time.time()
+        if now >= self.token.get('expires_at', 0):
+            if self.token.get('RefreshToken'):
+                self._refresh_token()
+            else:
+                self._get_initial_token()
+        assert now < self.token.get('expires_at', 0), self.token
+
+    def _get_initial_token(self):
+        """Authenticate and store the initial access token"""
 
         payload = ("{\"AuthFlow\":\"USER_SRP_AUTH\",\"ClientId\":\"%s\",\"AuthParameters\":"
         "{\"USERNAME\":\"%s\",\"SRP_A\":\"%s\"},\"ClientMetadata\":{}}" 
@@ -106,8 +111,9 @@ class RinnaiWaterHeater(object):
         )
         r.raise_for_status()
 
-        logging.info("Successfully sent initAuth")
+        LOGGER.debug("Successfully sent initAuth")
         result = r.json()
+        assert result['ChallengeName'] == 'PASSWORD_VERIFIER', result
         payload = self.process_challenge(result['ChallengeParameters'])
 
         r = requests.post(
@@ -116,18 +122,19 @@ class RinnaiWaterHeater(object):
             headers=RESPOND_TO_AUTH_CHALLENGE_HEADERS,
         )
         r.raise_for_status()
+        self._store_token(r.json())
 
-        result = r.json()
-        self.access_token = result['AuthenticationResult']['AccessToken']
-        self.expires_in = result['AuthenticationResult']['ExpiresIn']
-        self.id_token = result['AuthenticationResult']['IdToken']
-        self.refresh_token = result['AuthenticationResult']['RefreshToken']
-        self.expiry_date = time.time() + result['AuthenticationResult']['ExpiresIn']
-        return True
+    def _store_token(self, js):
+        self.token = js['AuthenticationResult']
+        assert 'AccessToken' in self.token, self.token
+        assert 'IdToken' in self.token, self.token
+        assert 'RefreshToken' in self.token, self.token
+        self.token['expires_at'] = time.time() + self.token['ExpiresIn']
+        LOGGER.debug(f'received token, expires {self.token["expires_at"]}')
 
-    def refreshToken(self, accessToken):
+    def _refresh_token(self):
         payload = ("{\"ClientId\":\"%s\",\"AuthFlow\":\"REFRESH_TOKEN_AUTH\",\"AuthParameters\":"
-                   "\"REFRESH_TOKEN\":\"%s\"}}" % (self.client_id, accessToken['refresh_token']))
+                   "\"REFRESH_TOKEN\":\"%s\"}}" % (self.client_id, self.token['RefreshToken']))
 
         r = requests.post(
             BASE_AUTH_URL,
@@ -135,33 +142,10 @@ class RinnaiWaterHeater(object):
             headers=INIT_AUTH_HEADERS,
         )
         r.raise_for_status()
-
-        result = r.json()
-        self.access_token = result['AuthenticationResult']['AccessToken']
-        self.expires_in = result['AuthenticationResult']['ExpiresIn']
-        self.id_token = result['AuthenticationResult']['IdToken']
-        self.refresh_token = result['AuthenticationResult']['RefreshToken']
-        self.expiry_date = time.time() + result['AuthenticationResult']['ExpiresIn']
-
-    def __acquireToken(self):
-        # Fetch and refresh tokens as needed
-        data = dict()
-        data["refresh_token"] = self.refresh_token
-
-        self.refresh_token = data['refresh_token']
-        if self.expiry_date:
-            if time.time() >= self.expiry_date:
-                logging.info('No token, or has expired, requesting new token')
-                self.refreshToken(data)
-        if self.access_token == None:
-            #No existing token exists so refreshing library
-            self.auth()
-        else:
-            logging.info('Token is valid, continuing')
-            pass
+        self._store_token(r.json())
 
     def getDevices(self):
-        self.__acquireToken()
+        self.validate_token()
 
         payload = GET_DEVICES_PAYLOAD % (self.username)
         headers = {
@@ -185,7 +169,7 @@ class RinnaiWaterHeater(object):
     @property
     def is_connected(self):
         """Connection status of client with Rinnai Cloud service"""
-        return bool(self.access_token) and time.time() < self.expiry_date
+        return time.time() < self.token.get('expires_at', 0)
 
     def generate_random_small_a(self):
         random_long_int = get_random(128)
