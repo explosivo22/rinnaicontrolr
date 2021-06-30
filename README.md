@@ -1,6 +1,6 @@
 # rinnaicontrolr - Python interface for the Rinnai Control-R API
 
-[![PyPi](https://img.shields.io/pypi/v/rinnaicontrolr?style=for-the-badge)](https://pypi.python.org/pypi/rinnaicontrolr)
+[![PyPi](https://img.shields.io/pypi/v/rinnaicontrolr/0.2.1.a?style=for-the-badge)](https://pypi.org/project/rinnaicontrolr/0.2.1a0/)
 [![License](https://img.shields.io/github/license/explosivo22/rinnaicontrolr?style=for-the-badge)](https://opensource.org/licenses/Apache-2.0)
 
 Python library for communicating with the [Rinnai Control-R Water Heaters and control devices](https://www.rinnai.us/tankless-water-heater/accessories/wifi) via the Rinnai Control-R cloud API.
