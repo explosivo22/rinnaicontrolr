@@ -55,6 +55,9 @@ class RinnaiWaterHeater(object):
         # refresh token. If we wanted to do so, we could look at renew_access_token()
         # in https://github.com/capless/warrant/blob/master/warrant/__init__.py
         # We don't do that now to avoid unnecessary code paths (and their bugs).
+        # NOTE: If Rinnai ever supports 2FA, that would be a reason to use
+        # the refresh token instead of re-running the password verifier, but
+        # that would also require other changes to this file.
         self._get_initial_token()
 
     def getDevices(self):
