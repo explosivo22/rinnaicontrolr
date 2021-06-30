@@ -12,7 +12,8 @@ NOTE:
 
 ## Supports
 
-- current temperature
+- starting/stop recirculation
+- setting temperature
 
 ## Installation
 
