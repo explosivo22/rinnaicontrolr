@@ -17,14 +17,88 @@ NOTE:
 ## Installation
 
 ```
-pip install rinnaicontrolr
+pip install rinnaicontrolr==0.2.1a0
 ```
 
 ## Examples
 
 ```python
-rinnai = RinnaiWaterHeater(username, password)
-rinnai.getDevices
+import asyncio
+
+from aiohttp import ClientSession
+
+from rinnaicontrolr import async_get_api
+
+
+async def main() -> None:
+    """Run!"""
+    api = await async_get_api("<EMAIL>", "<PASSWORD>")
+
+    # Get user account information:
+    user_info = await api.user.get_info()
+
+    # Get device information
+    first_device_id = user_info["devices"]["items"][0]["id"]
+    device_info = await api.device.get_info(first_device_id)
+
+    #Start Recirculation
+    #Last variable is duration in minutes
+    start_recirculation = await api.device.start_recirculation(user_info["id"], first_device_id, 5)
+
+    print(start_recirculation)
+
+    #Stop Recirculation
+    stop_recirculation = await api.device.stop_recirculation(user_info["id"], first_device_id)
+
+    print(stop_recirculation)
+
+    #Set Temperature
+    #Last variable is the temperature in increments of 5
+    set_temperature = await api.device.set_temperature(user_info["id"], first_device_id, 130)
+
+
+asyncio.run(main())
+
+```
+By default, the library creates a new connection to Rinnai with each coroutine. If you are calling a large number of coroutines (or merely want to squeeze out every second of runtime savings possible), an aiohttp ClientSession can be used for connection pooling:
+
+```python
+import asyncio
+
+from aiohttp import ClientSession
+
+from rinnaicontrolr import async_get_api
+
+
+async def main() -> None:
+    """Create the aiohttp session and run the example."""
+    async with ClientSession() as websession:
+        api = await async_get_api("<EMAIL>", "<PASSWORD>", session=websession)
+
+    # Get user account information:
+    user_info = await api.user.get_info()
+
+    # Get device information
+    first_device_id = user_info["devices"]["items"][0]["id"]
+    device_info = await api.device.get_info(first_device_id)
+
+    #Start Recirculation
+    #Last variable is duration in minutes
+    start_recirculation = await api.device.start_recirculation(user_info["id"], first_device_id, 5)
+
+    print(start_recirculation)
+
+    #Stop Recirculation
+    stop_recirculation = await api.device.stop_recirculation(user_info["id"], first_device_id)
+
+    print(stop_recirculation)
+
+    #Set Temperature
+    #Last variable is the temperature in increments of 5
+    set_temperature = await api.device.set_temperature(user_info["id"], first_device_id, 130)
+
+
+asyncio.run(main())
 ```
 
 ## Known Issues
