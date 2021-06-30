@@ -25,20 +25,20 @@ def path_open(fname, *args, **kwargs):
             pass
 
 import json, requests
+from botocore.exceptions import ClientError
 from rinnaicontrolr.base import RinnaiWaterHeater
 
 wh = RinnaiWaterHeater('not_a_valid_user@gmail.com', 'wrong_password')
 try:
     wh.validate_token()
     assert False # shouldn't get here
-except requests.exceptions.HTTPError as e:
-    code = e.response.status_code
-    assert code == 400, code
+except ClientError:
+    pass
 
 def test_rinnai_water_heater(wh):
     for device in wh.getDevices():
         s = device['info']['domestic_combustion']
-        # Yes, their API returns a string.
+        # Yes, their API returns a string, not a bool.
         # We check to make sure the string is valid.
         assert s == 'true' or s == 'false', s
 
