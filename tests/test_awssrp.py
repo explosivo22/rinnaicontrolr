@@ -17,10 +17,10 @@ def path_open(fname, *args, **kwargs):
 import json
 from botocore.exceptions import ClientError
 from rinnaicontrolr.aws_srp import AWSSRP
-from rinnaicontrolr.const import POOL_ID, CLIENT_ID
+from rinnaicontrolr.const import POOL_ID, CLIENT_ID, POOL_REGION
 
 bad = AWSSRP(username='not_a_valid_user@gmail.com', password='wrong_password', pool_id=POOL_ID,
-             client_id=CLIENT_ID, pool_region='us-east-1')
+             client_id=CLIENT_ID, pool_region=POOL_REGION)
 try:
     tokens = bad.authenticate_user()
     assert False, tokens # should not get here
