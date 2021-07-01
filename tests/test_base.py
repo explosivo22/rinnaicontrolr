@@ -27,18 +27,23 @@ def path_open(fname, *args, **kwargs):
 import json, requests
 from rinnaicontrolr.base import RinnaiWaterHeater
 
+wh = RinnaiWaterHeater('not_a_valid_user@gmail.com', 'wrong_password')
 try:
-    wh = RinnaiWaterHeater('not_a_valid_user@gmail.com', 'wrong_password')
+    wh.validate_token()
     assert False # shouldn't get here
 except requests.exceptions.HTTPError as e:
     code = e.response.status_code
     assert code == 400, code
 
-with path_open('test_credentials.json') as jfile:
-    js = json.load(jfile)
-    wh = RinnaiWaterHeater(js['user'], js['password'])
+def test_rinnai_water_heater(wh):
     for device in wh.getDevices():
         s = device['info']['domestic_combustion']
         # Yes, their API returns a string.
         # We check to make sure the string is valid.
         assert s == 'true' or s == 'false', s
+
+with path_open('test_credentials.json') as jfile:
+    js = json.load(jfile)
+    wh = RinnaiWaterHeater(js['user'], js['password'])
+    wh.validate_token()
+    test_rinnai_water_heater(wh)
