@@ -122,7 +122,7 @@ class API(object):
         if use_running_session:
             session = self._session
         else:
-            session = ClientSession(timeout=ClientTimeout(total=10))
+            session = ClientSession(timeout=ClientTimeout(total=120))
 
         try:
             async with session.request(method, url, **kwargs) as resp:
