@@ -13,6 +13,8 @@ from rinnaicontrolr.const import (
     POOL_ID,
     CLIENT_ID,
     POOL_REGION,
+    GRAPHQL_ENDPOINT,
+    SHADOW_ENDPOINT,
     GET_DEVICES_PAYLOAD
 )
 
@@ -61,7 +63,12 @@ class RinnaiWaterHeater(object):
         self._get_initial_token()
 
     def getDevices(self):
-        self.validate_token()
+        """Returns a list of devices, one for each water heater associated
+        with self.username."""
+
+        # we should call validate_token() here to ensure we have an access token.
+        # except Rinnai's API is not authenticated, so we don't need an access token.
+        # self.validate_token()
 
         payload = GET_DEVICES_PAYLOAD % (self.username)
         headers = {
@@ -70,13 +77,8 @@ class RinnaiWaterHeater(object):
           'Content-Type': 'application/json'
         }
 
-        r = requests.post(
-            'https://s34ox7kri5dsvdr43bfgp6qh6i.appsync-api.us-east-1.amazonaws.com/graphql',
-            data=payload,
-            headers=headers,
-        )
+        r = requests.post(GRAPHQL_ENDPOINT, data=payload, headers=headers)
         r.raise_for_status()
-
         result = r.json()
         for items in result["data"]['getUserByEmail']['items']:
             for k,v in items['devices'].items():
@@ -87,18 +89,18 @@ class RinnaiWaterHeater(object):
         """Connection status of client with Rinnai Cloud service"""
         return time.time() < self.token.get('expires_at', 0)
 
-    def start_recirculation(self, thing_name: str, user_uuid: str, duration: int, additional_params={}):
-        """start recirculation on the specified device"""
-        url = "https://d1coipyopavzuf.cloudfront.net/api/device_shadow/input"
-
+    def start_recirculation(self, dev, duration: int):
+        """Start recirculation on the specified device. dev is one of the devices
+        returned by get_devices()."""
+        thing_name = dev['thing_name']
+        user_uuid = dev['user_uuid']
         headers = {
           'User-Agent': 'okhttp/3.12.1',
           'Content-Type': 'application/x-www-form-urlencoded'
         }
         payload = "user=%s&thing=%s&attribute=set_priority_status&value=true" % (user_uuid, thing_name)
-
         r = requests.post(
-            url,
+            SHADOW_ENDPOINT,
             data=payload,
             headers=headers
         )
@@ -106,7 +108,7 @@ class RinnaiWaterHeater(object):
 
         payload = "user=%s&thing=%s&attribute=recirculation_duration&value=%s" % (user_uuid, thing_name, duration)
         r = requests.post(
-            url,
+            SHADOW_ENDPOINT,
             data=payload,
             headers=headers
         )
@@ -114,10 +116,9 @@ class RinnaiWaterHeater(object):
 
         payload = "user=%s&thing=%s&attribute=set_recirculation_enabled&value=true" % (user_uuid, thing_name)
         r = requests.post(
-            url,
+            SHADOW_ENDPOINT,
             data=payload,
             headers=headers
         )
         r.raise_for_status()
-
         return r
