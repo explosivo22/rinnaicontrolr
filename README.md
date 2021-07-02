@@ -5,11 +5,10 @@
 
 Python library for communicating with the [Rinnai Control-R Water Heaters and control devices](https://www.rinnai.us/tankless-water-heater/accessories/wifi) via the Rinnai Control-R cloud API.
 
-NOTE:
-
-* Rinnai's API is completely insecure. We recommend that you disconnect your water heater
+Rinnai's API is completely insecure. We recommend that you disconnect your water heater
 from the Control-R system until Rinnai fixes these basic issues.
-* This library is community supported, please submit changes and improvements.
+
+This library is community supported. Please submit changes and improvements.
 
 ## Support For
 
@@ -22,6 +21,7 @@ from the Control-R system until Rinnai fixes these basic issues.
 - reading schedules, vacation state
 - reading flow rates and service parameters
 - reading intake temperature, outlet temperature
+- reading the address of the device as entered into Control-R
 
 ## No Support For
 
@@ -44,7 +44,7 @@ for device in rinnai.get_devices():
     rinnai.set_temperature_setpoint(device, 90) # make it annoyingly cold
     rinnai.start_recirculation(device, 15) # start recirculation for 15 minutes
     if rinnai.is_heating(device):
-        print(f'heater is heating to a setpoint of {rinnai.get_temperature_setpoint(device)] degrees.')
+        print(f'heater is heating to a setpoint of {rinnai.get_temperature_setpoint(device)} degrees.')
 ```
 
 ## Known Issues
