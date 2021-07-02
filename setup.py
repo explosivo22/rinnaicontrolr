@@ -11,7 +11,7 @@ try:
 except FileNotFoundError:
     long_description = DESCRIPTION
 
-setuptools.setup(
+setup(
     name="rinnaicontrolr",
     version="0.4.0",
     description="Python interface for Rinnai Control-R API",
