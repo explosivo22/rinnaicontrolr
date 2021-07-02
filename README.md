@@ -7,12 +7,28 @@ Python library for communicating with the [Rinnai Control-R Water Heaters and co
 
 NOTE:
 
+* Rinnai's API is completely insecure. We recommend that you disconnect your water heater
+from the Control-R system until Rinnai fixes these basic issues.
 * This library is community supported, please submit changes and improvements.
-* This is a very basic interface, not well thought out at this point, but works for the use cases that initially prompted spitting this out from.
 
-## Supports
+## Support For
 
-- current temperature
+- reading and setting the temperature setpoint
+- reading whether heating or recirculation is in progress
+- starting recirculation
+
+## Limited Support For
+
+- reading schedules, vacation state
+- reading flow rates and service parameters
+- reading intake temperature, outlet temperature
+
+## No Support For
+
+- creating schedules
+- setting vacation state
+
+Please submit pull requests to add support for your favorite values.
 
 ## Installation
 
@@ -20,13 +36,22 @@ NOTE:
 pip install rinnaicontrolr
 ```
 
-## Examples
+## Example
 
 ```python
 rinnai = RinnaiWaterHeater(username, password)
-rinnai.getDevices
+for device in rinnai.get_devices():
+    rinnai.set_temperature_setpoint(device, 90) # make it annoyingly cold
+    rinnai.start_recirculation(device, 15) # start recirculation for 15 minutes
+    if rinnai.is_heating(device):
+        print(f'heater is heating to a setpoint of {rinnai.get_temperature_setpoint(device)] degrees.')
 ```
 
 ## Known Issues
 
-* not all APIs supported
+* Rinnai's API performs no authentication. Sorry, we can't fix this, we don't work for Rennai.
+
+## Future Plans
+
+* Perform authentication once Rennai's API requires it.
+* asyncio interface.
