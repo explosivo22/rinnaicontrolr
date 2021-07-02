@@ -1,12 +1,22 @@
-import setuptools
+import io
+import os
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+from setuptools import setup
+
+# The text of the README file
+here = os.path.abspath(os.path.dirname(__file__))
+try:
+    with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+        long_description = '\n' + f.read()
+except FileNotFoundError:
+    long_description = DESCRIPTION
 
 setuptools.setup(
     name="rinnaicontrolr",
     version="0.1.9",
     description="Python interface for Rinnai Control-R API",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url="https://github.com/explosivo22/rinnaicontrolr",
     author="Brad Barbour",
     author_email="barbourbj@gmail.com",
