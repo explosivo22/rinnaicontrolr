@@ -49,9 +49,9 @@ for device in rinnai.get_devices():
 
 ## Known Issues
 
-* Rinnai's API performs no authentication. Sorry, we can't fix this, we don't work for Rennai.
+* Rinnai's API performs no authentication. Sorry, we can't fix this, we don't work for Rinnai.
 
 ## Future Plans
 
-* Perform authentication once Rennai's API requires it.
+* Perform authentication once Rinnai's API requires it.
 * asyncio interface.
