@@ -21,9 +21,16 @@ from rinnaicontrolr.const import (
 class RinnaiWaterHeater(object):
     # Represents a Rinnai Water Heater, with methods for status and issuing commands
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, timeout=30):
+        """
+        timeout is the number of seconds to timeout any HTTPS request after authentication.
+        Authentication timeouts are handled by the boto3 client config, which can be
+        controled by an environment variable. Also, keep in mind that some functions
+        in this API perform multiple HTTPS requests.
+        """
         self.username = username
         self.password = password
+        self.timeout = timeout
         self.token = {}
 
     def validate_token(self):
@@ -62,18 +69,19 @@ class RinnaiWaterHeater(object):
         # that would also require other changes to this file.
         self._get_initial_token()
 
-    def _set_shadow(self, dev, value: dict):
+    def _set_shadow(self, dev, attribute, value):
         """Use the (unauthenticated) shadow API to set attribute to value
         on device dev."""
-        data = json.dumps(value)
-        headers = {
-            'User-Agent': 'okhttp/3.12.1',
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept-Encoding': 'gzip',
-            'Accept': 'application/json, text/plain, */*',
-            'Authorization': "Bearer {}".format(self.token.get('IdToken')),
+        data = {
+            'user': dev['user_uuid'],
+            'thing': dev['thing_name'],
+            'attribute': attribute,
+            'value': value
         }
-        r = requests.patch(SHADOW_ENDPOINT % (dev['thing_name']), data=data, headers=headers)
+        headers = {
+            'User-Agent': 'okhttp/3.12.1'
+        }
+        r = requests.post(SHADOW_ENDPOINT, data=data, headers=headers, timeout=self.timeout)
         r.raise_for_status()
         return r
 
@@ -83,9 +91,9 @@ class RinnaiWaterHeater(object):
         device. If you want to refresh the data for the device,
         call this method again."""
 
-        # call validate_token() here because we now need a token to call any of the
-        # shadow calls now as Rinnai has blocked the unauthenticated URL
-        self.validate_token()
+        # We should call validate_token() here to ensure we have an access token.
+        # Except Rinnai's API is not authenticated, so we don't need an access token.
+        # self.validate_token()
 
         payload = GET_DEVICES_PAYLOAD % (self.username)
         headers = {
@@ -94,7 +102,7 @@ class RinnaiWaterHeater(object):
           'Content-Type': 'application/json'
         }
 
-        r = requests.post(GRAPHQL_ENDPOINT, data=payload, headers=headers)
+        r = requests.post(GRAPHQL_ENDPOINT, data=payload, headers=headers, timeout=self.timeout)
         r.raise_for_status()
         result = r.json()
         for items in result["data"]['getUserByEmail']['items']:
@@ -104,13 +112,17 @@ class RinnaiWaterHeater(object):
     def start_recirculation(self, dev, duration: int):
         """Start recirculation on the specified device. dev is one of the devices
         returned by get_devices()."""
-        return self._set_shadow(dev, {"recirculation_duration": duration, "set_recirculation_enabled": True})
+
+        self._set_shadow(dev, 'set_priority_status', 'true')
+        self._set_shadow(dev, 'recirculation_duration', str(duration))
+        return self._set_shadow(dev, 'set_recirculation_enabled', 'true')
 
     def is_recirculating(self, dev):
         return dev['shadow']['recirculation_enabled']
 
     def set_temperature_setpoint(self, dev, temp: int):
-        return self._set_shadow(dev, {'set_priority_status': True, 'set_domestic_temperature': temp})
+        self._set_shadow(dev, 'set_priority_status', 'true')
+        return self._set_shadow(dev, 'set_domestic_temperature', str(temp))
 
     def get_temperature_setpoint(self, dev):
         return dev['info']['domestic_temperature']

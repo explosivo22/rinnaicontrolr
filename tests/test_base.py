@@ -36,7 +36,7 @@ except ClientError:
     pass
 
 def test_rinnai_water_heater(wh):
-    for device in wh.getDevices():
+    for device in wh.get_devices():
         s = device['info']['domestic_combustion']
         # Yes, their API returns a string, not a bool.
         # We check to make sure the string is valid.
