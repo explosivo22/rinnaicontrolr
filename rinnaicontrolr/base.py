@@ -21,9 +21,16 @@ from rinnaicontrolr.const import (
 class RinnaiWaterHeater(object):
     # Represents a Rinnai Water Heater, with methods for status and issuing commands
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, timeout=30):
+        """
+        timeout is the number of seconds to timeout any HTTPS request after authentication.
+        Authentication timeouts are handled by the boto3 client config, which can be
+        controled by an environment variable. Also, keep in mind that some functions
+        in this API perform multiple HTTPS requests.
+        """
         self.username = username
         self.password = password
+        self.timeout = timeout
         self.token = {}
 
     def validate_token(self):
@@ -74,7 +81,7 @@ class RinnaiWaterHeater(object):
         headers = {
             'User-Agent': 'okhttp/3.12.1'
         }
-        r = requests.post(SHADOW_ENDPOINT, data=data, headers=headers)
+        r = requests.post(SHADOW_ENDPOINT, data=data, headers=headers, timeout=self.timeout)
         r.raise_for_status()
         return r
 
@@ -95,7 +102,7 @@ class RinnaiWaterHeater(object):
           'Content-Type': 'application/json'
         }
 
-        r = requests.post(GRAPHQL_ENDPOINT, data=payload, headers=headers)
+        r = requests.post(GRAPHQL_ENDPOINT, data=payload, headers=headers, timeout=self.timeout)
         r.raise_for_status()
         result = r.json()
         for items in result["data"]['getUserByEmail']['items']:

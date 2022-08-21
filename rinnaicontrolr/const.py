@@ -5,7 +5,7 @@ CLIENT_ID = '5ghq3i6k4p9s7dfu34ckmec91'
 POOL_REGION = 'us-east-1'
 
 GRAPHQL_ENDPOINT = 'https://s34ox7kri5dsvdr43bfgp6qh6i.appsync-api.us-east-1.amazonaws.com/graphql'
-SHADOW_ENDPOINT = 'https://d1coipyopavzuf.cloudfront.net/api/device_shadow/input'
+SHADOW_ENDPOINT = 'https://698suy4zs3.execute-api.us-east-1.amazonaws.com/Prod/thing/%s/shadow'
 
 GET_DEVICES_PAYLOAD = ("{\r\n    \"query\": \"query GetUserByEmail($email: String, $sortDirection: ModelSortDirection, $filter: ModelRinnaiUserFilterInput, $limit: Int, $nextToken: String) "
                    "{\\n  getUserByEmail(email: $email, sortDirection: $sortDirection, filter: $filter, limit: $limit, nextToken: $nextToken) {\\n    items {devices {\\n        "
