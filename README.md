@@ -5,8 +5,8 @@
 
 Python library for communicating with the [Rinnai Control-R Water Heaters and control devices](https://www.rinnai.us/tankless-water-heater/accessories/wifi) via the Rinnai Control-R cloud API.
 
-Rinnai's API is completely insecure. We recommend that you disconnect your water heater
-from the Control-R system until Rinnai fixes these basic issues.
+Rinnai's API is completely insecure when it comes to reading information about your water heater. 
+We recommend that you disconnect your water heater from the Control-R system until Rinnai fixes these basic issues.
 
 This library is community supported. Please submit changes and improvements.
 
@@ -49,9 +49,8 @@ for device in rinnai.get_devices():
 
 ## Known Issues
 
-* Rinnai's API performs no authentication. Sorry, we can't fix this, we don't work for Rinnai.
+* Rinnai's API is having trouble setting recirculation longer than 5 minutes even from their APP.
 
 ## Future Plans
 
-* Perform authentication once Rinnai's API requires it.
 * asyncio interface.
