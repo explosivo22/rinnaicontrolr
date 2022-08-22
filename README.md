@@ -49,9 +49,8 @@ for device in rinnai.get_devices():
 
 ## Known Issues
 
-* Rinnai's API performs no authentication. Sorry, we can't fix this, we don't work for Rinnai.
+* Rinnai's API is having trouble setting recirculation longer than 5 minutes even from their APP.
 
 ## Future Plans
 
-* Perform authentication once Rinnai's API requires it.
 * asyncio interface.
